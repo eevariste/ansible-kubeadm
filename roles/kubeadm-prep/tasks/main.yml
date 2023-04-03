@@ -97,3 +97,31 @@
     cmd: export GOPATH=/root/go | /root/.go/bin/go build -o ../bin/cri-dockerd
     chdir: /root/cri-dockerd
 
+- name: Install cri-dockerd
+  ansible.builtin.shell:
+    cmd: /usr/bin/install -o root -g root -m 0755 bin/cri-dockerd /usr/local/bin/cri-dockerd
+    chdir: /root
+
+- name: Copy systemd Files
+  ansible.builtin.shell:
+    cmd: cp -a /root/cri-dockerd/packaging/systemd/* /etc/systemd/system 
+
+- name: Update systemd files
+  ansible.builtin.shell:
+    cmd: sed -i -e 's,/usr/bin/cri-dockerd,/usr/local/bin/cri-dockerd,' /etc/systemd/system/cri-docker.service
+
+- name: Systemd daemon reload
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Enable cri-docker.service
+  ansible.builtin.systemd:
+    enabled: true
+    name: cri-docker.service
+
+- name: Enable cri-docker.socket
+  ansible.builtin.systemd:
+    enabled: true
+    state: started
+    name: cri-docker.socket
+  
