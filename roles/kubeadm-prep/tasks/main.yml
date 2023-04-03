@@ -43,8 +43,8 @@
 
 - name: Add user
   ansible.builtin.user:
-    name: enoch
-    comment: Enoch Evariste
+    name: kube-user
+    comment: Kubernetes User
     groups: sudo,docker
     append: yes
 
@@ -81,4 +81,19 @@
   ansible.builtin.shell: /tmp/install_linux                                                                                                                                                                               
   when: go_installed is failed
 
+- name: Clone cri-dockerd
+  ansible.builtin.git:
+    repo: https://github.com/Mirantis/cri-dockerd.git
+    dest: /root/cri-dockerd
+
+- name: Create bin directory
+  ansible.builtin.file:
+    path: /root/cri-dockerd/bin
+    state: directory
+    mode: '0755'
+
+- name: Build cri-dockerd 
+  ansible.builtin.shell: 
+    cmd: export GOPATH=/root/go | /root/.go/bin/go build -o ../bin/cri-dockerd
+    chdir: /root/cri-dockerd
 
