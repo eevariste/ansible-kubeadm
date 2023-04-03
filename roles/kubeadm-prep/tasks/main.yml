@@ -1,0 +1,84 @@
+---
+- name: Make sure swap is off
+  ansible.builtin.command: swapoff -a
+
+- name: Remove Old Docker Packages
+  ansible.builtin.apt:
+    pkg:
+      - docker
+      - docker.io
+      - containerd
+      - run
+    state: absent
+
+- name: Setup Packages for Docker Repo
+  ansible.builtin.apt:
+    pkg:
+      - apt-transport-https 
+      - ca-certificates 
+      - curl 
+      - software-properties-common 
+      - gnupg
+      - lsb-release
+    state: present
+
+- name: Add Docker GPG key
+  ansible.builtin.apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add stable Docker repository
+  ansible.builtin.apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
+    state: present
+
+- name: Install Docker CE
+  ansible.builtin.apt:
+    pkg:
+      - docker-ce 
+      - docker-ce-cli 
+      - containerd.io 
+      - docker-compose-plugin
+    update_cache: yes
+
+- name: Add user
+  ansible.builtin.user:
+    name: enoch
+    comment: Enoch Evariste
+    groups: sudo,docker
+    append: yes
+
+- name: Set Docker to use cgroup driver
+  ansible.builtin.copy:
+    src: daemon.json
+    dest: /etc/docker/daemon.json
+
+- name: Create Docker systemd directory
+  ansible.builtin.file:
+    path: /etc/systemd/system/docker.service.d 
+    state: directory
+    mode: '0755'
+
+- name: Restart Docker
+  ansible.builtin.systemd:
+    state: restarted
+    daemon_reload: true
+    name: docker
+
+- name: Get Go version                                                                                                                                                                                                    
+  ansible.builtin.shell: /root/.go/bin/go version                                                                                                                                                                         
+  register: go_installed                                                                                                                                                                                                  
+  ignore_errors: true                                                                                                                                                                                                     
+                                                                                                                                                                                                                          
+- name: Download Go                                                                                                                                                                                                       
+  ansible.builtin.get_url:                                                                                                                                                                                                
+    url: https://storage.googleapis.com/golang/getgo/installer_linux                                                                                                                                                      
+    dest: /tmp/install_linux                                                                                                                                                                                              
+    mode: '0755'                                                                                                                                                                                                          
+  when: go_installed is failed                                                                                                                                                                                            
+                                                                                                                                                                                                                          
+- name: Install Go                                                                                                                                                                                                        
+  ansible.builtin.shell: /tmp/install_linux                                                                                                                                                                               
+  when: go_installed is failed
+
+

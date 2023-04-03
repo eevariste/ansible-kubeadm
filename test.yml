@@ -1,0 +1,20 @@
+- name: Test play
+  hosts: all
+
+  tasks:
+    - name: Get Go version
+      ansible.builtin.shell: /root/.go/bin/go version
+      register: go_installed
+      ignore_errors: true
+
+    - name: Download Go
+      ansible.builtin.get_url:
+        url: https://storage.googleapis.com/golang/getgo/installer_linux 
+        dest: /tmp/install_linux
+        mode: '0755'
+      when: go_installed is failed 
+
+    - name: Install Go
+      ansible.builtin.shell: /tmp/install_linux
+      when: go_installed is failed
+    #  when: go_version_output.stdout == 'go version go1.20.2 linux/amd64'
