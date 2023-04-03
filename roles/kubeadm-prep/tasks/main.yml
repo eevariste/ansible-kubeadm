@@ -129,3 +129,25 @@
   ansible.builtin.apt_key:
     url: https://packages.cloud.google.com/apt/doc/apt-key.gpg 
     state: present
+
+- name: Add Kubernetes package repository
+  ansible.builtin.apt_repository:
+    repo: deb https://apt.kubernetes.io/ kubernetes-xenial main 
+    state: present
+
+- name: Install Kubernetes packages
+  ansible.builtin.apt:
+    pkg:
+      - kubelet 
+      - kubeadm 
+      - kubectl 
+    update_cache: yes 
+
+- name: Hold Kubernetes packages
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop:
+    - kubelet
+    - kubeadm
+    - kubectl
